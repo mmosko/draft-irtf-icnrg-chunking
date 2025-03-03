@@ -1,8 +1,8 @@
 
 .PHONY: all reqs
 
-VER=03
-BASE=draft-mosko-icnrg-ccnxchunking
+VER=00
+BASE=draft-irtf-icnrg-ccnxchunking
 VERSIONED=$(BASE)-$(VER)
 OUTPUT=$(VERSIONED).txt $(VERSIONED).html $(VERSIONED).pdf
 
