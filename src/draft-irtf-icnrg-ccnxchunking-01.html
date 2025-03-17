@@ -18,7 +18,7 @@
     " name="description">
 <meta content="xml2rfc 3.28.0" name="generator">
 <meta content="Content Centric Networking" name="keyword">
-<meta content="draft-irtf-icnrg-ccnxchunking-00" name="ietf.draft">
+<meta content="draft-irtf-icnrg-ccnxchunking-01" name="ietf.draft">
 <!-- Generator version information:
   xml2rfc 3.28.0
     Python 3.12.3
@@ -35,7 +35,7 @@
     wcwidth 0.2.13
     weasyprint 64.1
 -->
-<link href="draft-irtf-icnrg-ccnxchunking-00.xml" rel="alternate" type="application/rfc+xml">
+<link href="draft-irtf-icnrg-ccnxchunking-01.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
 <style type="text/css">/*
 
@@ -1222,7 +1222,7 @@ li > p:last-of-type:only-child {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Mosko &amp; Asaeda</td>
-<td class="center">Expires 4 September 2025</td>
+<td class="center">Expires 18 September 2025</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1232,18 +1232,18 @@ li > p:last-of-type:only-child {
 <dt class="label-workgroup">Workgroup:</dt>
 <dd class="workgroup">ICNRG</dd>
 <dt class="label-internet-draft">Internet-Draft:</dt>
-<dd class="internet-draft">draft-irtf-icnrg-ccnxchunking-00</dd>
+<dd class="internet-draft">draft-irtf-icnrg-ccnxchunking-01</dd>
 <dt class="label-updates">Updates:</dt>
 <dd class="updates">
 <a href="https://www.rfc-editor.org/rfc/rfc8569" class="eref">8569</a>, <a href="https://www.rfc-editor.org/rfc/rfc8609" class="eref">8609</a> (if approved)</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-03-03" class="published">3 March 2025</time>
+<time datetime="2025-03-17" class="published">17 March 2025</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Experimental</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2025-09-04">4 September 2025</time></dd>
+<dd class="expires"><time datetime="2025-09-18">18 September 2025</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1286,7 +1286,7 @@ li > p:last-of-type:only-child {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 4 September 2025.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 18 September 2025.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1341,7 +1341,7 @@ li > p:last-of-type:only-child {
                 <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-chunknumber" class="internal xref">ChunkNumber</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
-                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-endchunknumber" class="internal xref">EndChunkNumber</a></p>
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-message-tlvs" class="internal xref">Message TLVs</a></p>
 </li>
             </ul>
 </li>
@@ -1405,7 +1405,9 @@ li > p:last-of-type:only-child {
         information used to bind the Name to the payload.<a href="#section-1-3" class="pilcrow">¶</a></p>
 <p id="section-1-4">This document adds a ChunkNumber to the CCNx Name Segment Type for conveying the 
       chunk number and an EndChunkNumber to the CCNx Message Type for conveying the last 
-      chunk number of the content. It updates <span>[<a href="#RFC8609" class="cite xref">RFC8609</a>]</span>. It also 
+      chunk number of the content. It adds a ChunkSize CCNx Message Type to specify
+      that a constant payload size enables a consumer to seek to specific byte locations.
+      It updates <span>[<a href="#RFC8609" class="cite xref">RFC8609</a>]</span>. It also 
       provides guidelines for the usage of the Key Locator in chunked objects.<a href="#section-1-4" class="pilcrow">¶</a></p>
 <p id="section-1-5">Packets are represented as 32-bit wide words using ASCII art.  Because
       of the TLV encoding and optional fields or sizes, there is no concise
@@ -1439,17 +1441,19 @@ li > p:last-of-type:only-child {
       contiguous chunk.  The chunking ends at the final chunk.  No valid
       user data exists beyond the final chunk, and reading beyond the final
       chunk MUST NOT return any user data.<a href="#section-2-1" class="pilcrow">¶</a></p>
-<p id="section-2-2">Chunking MUST use a fixed block size, where only the final chunk MAY
+<p id="section-2-2">Chunking MAY use a fixed block size, where only the final chunk MAY
         use a smaller block size.  This is required to allow a reader to seek
         to a specific byte offset once it knows the block size.
-        The blocksize may be inferred from the size of the first chunk of user data.
+        If the first (Chunk 0) object has the field ChunkSize, then the
+        series of chunked objects uses a fixed payload size.
+        ChunkSize MUST only appear in Chunk 0, if it is used.
         The first chunk of user data (a chunk with a Payload TLV) may not be chunk 0.<a href="#section-2-2" class="pilcrow">¶</a></p>
-<p id="section-2-3">Because of the requirement for a fixed block size, the inclusion of certain cryptographic
+<p id="section-2-3">Because of the possible use of a fixed block size, the inclusion of certain cryptographic
       fields in the same content objects as user data would throw off the ability to seek.
       Therefore, it is RECOMMENDED that all required cryptographic data, such as public keys
       or key name links, be included in the leading chunks before the first byte of user data.
-      User data SHOULD then run continuously and with the same block size through the remainder
-      of the content objects.<a href="#section-2-3" class="pilcrow">¶</a></p>
+      User data SHOULD then run continuously.  If the publisher included ChunkSize in 
+      Chunk 0, then all Payload sizes must be of ChunkSize except the last, which may be smaller.<a href="#section-2-3" class="pilcrow">¶</a></p>
 <p id="section-2-4">An advantage of using a Manifest (e.g. <span><a href="#FLIC" class="internal xref">FLIC</a> [<a href="#FLIC" class="cite xref">FLIC</a>]</span>) 
       is that all cryptographic data is
       in the manifest, which then links to each chunk via a full hash name.  This means
@@ -1463,7 +1467,7 @@ li > p:last-of-type:only-child {
 <p id="section-2-7">A name MAY have more than one ChunkNumber name segments.  This may happen, for 
       example, if one chunked object is related to another chunked object.  Only the
       last ChunkNumber name segment is significant.<a href="#section-2-7" class="pilcrow">¶</a></p>
-<p id="section-2-8">The new Content Object field is the EndChunkNumber.
+<p id="section-2-8">EndChunkNumber is a new Content Object message type.
       It MUST be included in the Content Object which is the last chunk of user data,
       where the ChunkNumber TLV value and the EndChunkNumber TLV value MUST be the same.
       The value of the EndChunkNumber value is the same format as the ChunkNumber name segment.
@@ -1495,10 +1499,11 @@ li > p:last-of-type:only-child {
     incrementing by 1.<a href="#section-2-16.1" class="pilcrow">¶</a>
 </li>
         <li id="section-2-16.2">The leading chunks MAY have missing or empty Payload TLVs
-    and convey only cryptographic information.<a href="#section-2-16.2" class="pilcrow">¶</a>
+    and convey only cryptographic or other information.<a href="#section-2-16.2" class="pilcrow">¶</a>
 </li>
-        <li id="section-2-16.3">All Content objects with a Payload MUST use the same block size
-    except the last.  They MUST be ChunkNumber contiguous.<a href="#section-2-16.3" class="pilcrow">¶</a>
+        <li id="section-2-16.3">An optional ChunkSize TLV MAY be in, and only in, Chunk 0.  If it is present,
+          it indicates that all Payloads are the same number of bytes, except the last which
+          may be smaller.<a href="#section-2-16.3" class="pilcrow">¶</a>
 </li>
         <li id="section-2-16.4">The last chunk MUST have an EndChunkNumber TLV and the value
     MUST be equal to the ChunkNumber TLV value.<a href="#section-2-16.4" class="pilcrow">¶</a>
@@ -1650,15 +1655,15 @@ ccnx:/Name=example.com/Name=talk.wav/Chunk=6  EndChunkNumber=3
 </div>
 <div id="signed_info">
 <section id="section-3.2">
-        <h3 id="name-endchunknumber">
-<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-endchunknumber" class="section-name selfRef">EndChunkNumber</a>
+        <h3 id="name-message-tlvs">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-message-tlvs" class="section-name selfRef">Message TLVs</a>
         </h3>
-<p id="section-3.2-1">CCNx chunking defines one new CCNx Message type: EndChunkNumber.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
-<span id="name-endchunknumber-2"></span><div id="si_tlvs">
+<p id="section-3.2-1">CCNx chunking defines two new CCNx Message type: EndChunkNumber and ChunkSize.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<span id="name-endchunknumber"></span><div id="si_tlvs">
 <table class="center" id="table-2">
           <caption>
 <a href="#table-2" class="selfRef">Table 2</a>:
-<a href="#name-endchunknumber-2" class="selfRef">EndChunkNumber</a>
+<a href="#name-endchunknumber" class="selfRef">EndChunkNumber</a>
           </caption>
 <thead>
             <tr>
@@ -1679,6 +1684,15 @@ ccnx:/Name=example.com/Name=talk.wav/Chunk=6  EndChunkNumber=3
             in network byte order without leading zeros.  The value
             of zero is represented as the single byte %x00.</td>
             </tr>
+            <tr>
+              <td class="text-center" rowspan="1" colspan="1">%x000F</td>
+              <td class="text-center" rowspan="1" colspan="1">T_CHUNK_SIZE</td>
+              <td class="text-center" rowspan="1" colspan="1">
+                <span><a href="#signed_info" class="internal xref">ChunkSize</a> (<a href="#signed_info" class="auto internal xref">Section 3.2</a>)</span>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The fixed payload size of user data upto the last chunk.
+            It must be a positive integer.</td>
+            </tr>
           </tbody>
         </table>
 </div>
@@ -1696,9 +1710,11 @@ ccnx:/Name=example.com/Name=talk.wav/Chunk=6  EndChunkNumber=3
 +---------------+---------------+
 </pre><a href="#section-3.2-4" class="pilcrow">¶</a>
 </div>
+<p id="section-3.2-5">The chunk size number is the same as the end chunk number, except it
+          must be a positive integer.<a href="#section-3.2-5" class="pilcrow">¶</a></p>
 <span id="name-ccnx-message-type-namespace"></span><div id="CCNx_Type">
 <figure id="figure-2">
-          <div class="alignCenter art-text artwork" id="section-3.2-5.1">
+          <div class="alignCenter art-text artwork" id="section-3.2-6.1">
 <pre>
      Code          Type name
 ==============     ===================
@@ -1712,6 +1728,7 @@ ccnx:/Name=example.com/Name=talk.wav/Chunk=6  EndChunkNumber=3
 %x0008-%x000C      Reserved [RFC8609]
     %x000D         T_DISC_REQ [RFC9344]
     %x000E         T_DISC_REPLY [RFC9344]
+    %x000F         T_CHUNK_SIZE
     %x0FFE         T_PAD [RFC8609]
     %x0FFF         T_ORG [RFC8609]
 %x1000-%x1FFF      Reserved [RFC8609]
@@ -1751,7 +1768,8 @@ ccnx:/Name=example.com/Name=talk.wav/Chunk=6  EndChunkNumber=3
         <h3 id="name-ccnx-message-type-registry">
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-ccnx-message-type-registry" class="section-name selfRef">CCNx Message Type Registry</a>
         </h3>
-<p id="section-5.2-1">This document defines one message type, T_ENDCHUNK, whose suggested value is %x0007.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-1">This document defines two message types, T_ENDCHUNK, whose suggested value is %x0007, and
+          T_CHUNK_SIZE, whose value is %0x000F.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

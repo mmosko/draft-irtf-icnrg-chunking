@@ -6,11 +6,11 @@ ICNRG                                                         M.E. Mosko
 Internet-Draft                                                          
 Updates: 8569, 8609 (if approved)                              H. Asaeda
 Intended status: Experimental                                       NICT
-Expires: 4 September 2025                                   3 March 2025
+Expires: 18 September 2025                                 17 March 2025
 
 
                       CCNx Content Object Chunking
-                    draft-irtf-icnrg-ccnxchunking-00
+                    draft-irtf-icnrg-ccnxchunking-01
 
 Abstract
 
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 4 September 2025.
+   This Internet-Draft will expire on 18 September 2025.
 
 Copyright Notice
 
@@ -53,7 +53,7 @@ Copyright Notice
 
 
 
-Mosko & Asaeda          Expires 4 September 2025                [Page 1]
+Mosko & Asaeda          Expires 18 September 2025               [Page 1]
 
 Internet-Draft                CCNx chunking                   March 2025
 
@@ -76,7 +76,7 @@ Table of Contents
      2.2.  Examples  . . . . . . . . . . . . . . . . . . . . . . . .   6
    3.  TLV Types . . . . . . . . . . . . . . . . . . . . . . . . . .   7
      3.1.  ChunkNumber . . . . . . . . . . . . . . . . . . . . . . .   7
-     3.2.  EndChunkNumber  . . . . . . . . . . . . . . . . . . . . .   8
+     3.2.  Message TLVs  . . . . . . . . . . . . . . . . . . . . . .   8
    4.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   9
    5.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   9
      5.1.  CCNx Name Segment Type Registry . . . . . . . . . . . . .   9
@@ -109,7 +109,7 @@ Table of Contents
 
 
 
-Mosko & Asaeda          Expires 4 September 2025                [Page 2]
+Mosko & Asaeda          Expires 18 September 2025               [Page 2]
 
 Internet-Draft                CCNx chunking                   March 2025
 
@@ -128,7 +128,9 @@ Internet-Draft                CCNx chunking                   March 2025
 
    This document adds a ChunkNumber to the CCNx Name Segment Type for
    conveying the chunk number and an EndChunkNumber to the CCNx Message
-   Type for conveying the last chunk number of the content.  It updates
+   Type for conveying the last chunk number of the content.  It adds a
+   ChunkSize CCNx Message Type to specify that a constant payload size
+   enables a consumer to seek to specific byte locations.  It updates
    [RFC8609].  It also provides guidelines for the usage of the Key
    Locator in chunked objects.
 
@@ -163,27 +165,27 @@ Internet-Draft                CCNx chunking                   March 2025
 
 
 
-
-
-Mosko & Asaeda          Expires 4 September 2025                [Page 3]
+Mosko & Asaeda          Expires 18 September 2025               [Page 3]
 
 Internet-Draft                CCNx chunking                   March 2025
 
 
-   Chunking MUST use a fixed block size, where only the final chunk MAY
+   Chunking MAY use a fixed block size, where only the final chunk MAY
    use a smaller block size.  This is required to allow a reader to seek
-   to a specific byte offset once it knows the block size.  The
-   blocksize may be inferred from the size of the first chunk of user
-   data.  The first chunk of user data (a chunk with a Payload TLV) may
-   not be chunk 0.
+   to a specific byte offset once it knows the block size.  If the first
+   (Chunk 0) object has the field ChunkSize, then the series of chunked
+   objects uses a fixed payload size.  ChunkSize MUST only appear in
+   Chunk 0, if it is used.  The first chunk of user data (a chunk with a
+   Payload TLV) may not be chunk 0.
 
-   Because of the requirement for a fixed block size, the inclusion of
+   Because of the possible use of a fixed block size, the inclusion of
    certain cryptographic fields in the same content objects as user data
    would throw off the ability to seek.  Therefore, it is RECOMMENDED
    that all required cryptographic data, such as public keys or key name
    links, be included in the leading chunks before the first byte of
-   user data.  User data SHOULD then run continuously and with the same
-   block size through the remainder of the content objects.
+   user data.  User data SHOULD then run continuously.  If the publisher
+   included ChunkSize in Chunk 0, then all Payload sizes must be of
+   ChunkSize except the last, which may be smaller.
 
    An advantage of using a Manifest (e.g. FLIC [FLIC]) is that all
    cryptographic data is in the manifest, which then links to each chunk
@@ -205,7 +207,7 @@ Internet-Draft                CCNx chunking                   March 2025
    chunked object.  Only the last ChunkNumber name segment is
    significant.
 
-   The new Content Object field is the EndChunkNumber.  It MUST be
+   EndChunkNumber is a new Content Object message type.  It MUST be
    included in the Content Object which is the last chunk of user data,
    where the ChunkNumber TLV value and the EndChunkNumber TLV value MUST
    be the same.  The value of the EndChunkNumber value is the same
@@ -219,9 +221,7 @@ Internet-Draft                CCNx chunking                   March 2025
 
 
 
-
-
-Mosko & Asaeda          Expires 4 September 2025                [Page 4]
+Mosko & Asaeda          Expires 18 September 2025               [Page 4]
 
 Internet-Draft                CCNx chunking                   March 2025
 
@@ -259,10 +259,11 @@ Internet-Draft                CCNx chunking                   March 2025
        and incrementing by 1.
 
    2.  The leading chunks MAY have missing or empty Payload TLVs and
-       convey only cryptographic information.
+       convey only cryptographic or other information.
 
-   3.  All Content objects with a Payload MUST use the same block size
-       except the last.  They MUST be ChunkNumber contiguous.
+   3.  An optional ChunkSize TLV MAY be in, and only in, Chunk 0.  If it
+       is present, it indicates that all Payloads are the same number of
+       bytes, except the last which may be smaller.
 
    4.  The last chunk MUST have an EndChunkNumber TLV and the value MUST
        be equal to the ChunkNumber TLV value.
@@ -271,16 +272,19 @@ Internet-Draft                CCNx chunking                   March 2025
        TLV with the expected last chunk number.  These hints MAY be
        updated in subsequent Content Objects but SHOULD NOT decrease.
 
-   6.  If the final chunk has a ChunkNumber less than a previously
-       published EndChunkNumber, the publisher SHOULD pad out the chunks
-       with empty Content Objects that have the true EndChunkNumber.
 
 
 
-Mosko & Asaeda          Expires 4 September 2025                [Page 5]
+
+
+Mosko & Asaeda          Expires 18 September 2025               [Page 5]
 
 Internet-Draft                CCNx chunking                   March 2025
 
+
+   6.  If the final chunk has a ChunkNumber less than a previously
+       published EndChunkNumber, the publisher SHOULD pad out the chunks
+       with empty Content Objects that have the true EndChunkNumber.
 
 2.1.  Cryptographic material
 
@@ -329,11 +333,7 @@ Internet-Draft                CCNx chunking                   March 2025
 
 
 
-
-
-
-
-Mosko & Asaeda          Expires 4 September 2025                [Page 6]
+Mosko & Asaeda          Expires 18 September 2025               [Page 6]
 
 Internet-Draft                CCNx chunking                   March 2025
 
@@ -389,28 +389,34 @@ Internet-Draft                CCNx chunking                   March 2025
 
 
 
-Mosko & Asaeda          Expires 4 September 2025                [Page 7]
+Mosko & Asaeda          Expires 18 September 2025               [Page 7]
 
 Internet-Draft                CCNx chunking                   March 2025
 
 
                  Figure 1: CCNx Name Segment Type Namespace
 
-3.2.  EndChunkNumber
+3.2.  Message TLVs
 
-   CCNx chunking defines one new CCNx Message type: EndChunkNumber.
+   CCNx chunking defines two new CCNx Message type: EndChunkNumber and
+   ChunkSize.
 
-   +========+============+================+============================+
-   |  Type  |   Abbrev   |      Name      | Description                |
-   +========+============+================+============================+
-   | %x0007 | T_ENDCHUNK | EndChunkNumber | The last Chunk number,     |
-   |        |            | (Section 3.2)  | as an unsigned integer     |
-   |        |            |                | in network byte order      |
-   |        |            |                | without leading zeros.     |
-   |        |            |                | The value of zero is       |
-   |        |            |                | represented as the         |
-   |        |            |                | single byte %x00.          |
-   +--------+------------+----------------+----------------------------+
+    +========+==============+================+========================+
+    |  Type  |    Abbrev    |      Name      | Description            |
+    +========+==============+================+========================+
+    | %x0007 |  T_ENDCHUNK  | EndChunkNumber | The last Chunk number, |
+    |        |              | (Section 3.2)  | as an unsigned integer |
+    |        |              |                | in network byte order  |
+    |        |              |                | without leading zeros. |
+    |        |              |                | The value of zero is   |
+    |        |              |                | represented as the     |
+    |        |              |                | single byte %x00.      |
+    +--------+--------------+----------------+------------------------+
+    | %x000F | T_CHUNK_SIZE |   ChunkSize    | The fixed payload size |
+    |        |              | (Section 3.2)  | of user data upto the  |
+    |        |              |                | last chunk.  It must   |
+    |        |              |                | be a positive integer. |
+    +--------+--------------+----------------+------------------------+
 
                           Table 2: EndChunkNumber
 
@@ -426,6 +432,24 @@ Internet-Draft                CCNx chunking                   March 2025
    |     variable length integer   /
    +---------------+---------------+
 
+   The chunk size number is the same as the end chunk number, except it
+   must be a positive integer.
+
+
+
+
+
+
+
+
+
+
+
+Mosko & Asaeda          Expires 18 September 2025               [Page 8]
+
+Internet-Draft                CCNx chunking                   March 2025
+
+
                      Code          Type name
                 ==============     ===================
                     %x0000         T_NAME [RFC8609]
@@ -438,17 +462,10 @@ Internet-Draft                CCNx chunking                   March 2025
                 %x0008-%x000C      Reserved [RFC8609]
                     %x000D         T_DISC_REQ [RFC9344]
                     %x000E         T_DISC_REPLY [RFC9344]
+                    %x000F         T_CHUNK_SIZE
                     %x0FFE         T_PAD [RFC8609]
                     %x0FFF         T_ORG [RFC8609]
                 %x1000-%x1FFF      Reserved [RFC8609]
-
-
-
-
-Mosko & Asaeda          Expires 4 September 2025                [Page 8]
-
-Internet-Draft                CCNx chunking                   March 2025
-
 
                    Figure 2: CCNx Message Type Namespace
 
@@ -468,8 +485,8 @@ Internet-Draft                CCNx chunking                   March 2025
 
 5.2.  CCNx Message Type Registry
 
-   This document defines one message type, T_ENDCHUNK, whose suggested
-   value is %x0007.
+   This document defines two message types, T_ENDCHUNK, whose suggested
+   value is %x0007, and T_CHUNK_SIZE, whose value is %0x000F.
 
 6.  Security Considerations
 
@@ -479,6 +496,15 @@ Internet-Draft                CCNx chunking                   March 2025
 7.  References
 
 7.1.  Normative References
+
+
+
+
+
+Mosko & Asaeda          Expires 18 September 2025               [Page 9]
+
+Internet-Draft                CCNx chunking                   March 2025
+
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -498,13 +524,6 @@ Internet-Draft                CCNx chunking                   March 2025
               Networking (CCNx) Semantics", RFC 8569,
               DOI 10.17487/RFC8569, July 2019,
               <https://www.rfc-editor.org/info/rfc8569>.
-
-
-
-Mosko & Asaeda          Expires 4 September 2025                [Page 9]
-
-Internet-Draft                CCNx chunking                   March 2025
-
 
    [RFC8609]  Mosko, M., Solis, I., and C. Wood, "Content-Centric
               Networking (CCNx) Messages in TLV Format", RFC 8609,
@@ -538,23 +557,4 @@ Authors' Addresses
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Mosko & Asaeda          Expires 4 September 2025               [Page 10]
+Mosko & Asaeda          Expires 18 September 2025              [Page 10]
